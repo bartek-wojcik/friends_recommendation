@@ -1,0 +1,5 @@
+venv/
+result/*.crc
+result/_SUCESS
+.idea/
+
