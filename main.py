@@ -50,12 +50,16 @@ def mutual_friend_count_to_recommendation(mutuals):
     return [recommendation_0, recommendation_1]
 
 
-def recommendation_to_sorted_truncated(recs):
-    # Sort first by mutual friend count, then by user_id (for equal number of mutual friends between users)
-    recs.sort(key=lambda x: (-x[1], x[0]))
+def recommendation_to_sorted_truncated(recommendation):
+    user = recommendation[0]
+    recommendations = list(recommendation[1])
 
-    # Map every [(user_id, mutual_count), ...] to [user_id, ...] and truncate to 10 elements
-    return list(map(lambda x: x[0], recs))[:10]
+    # Sort first by mutual friend count, then by user_id (for equal number of mutual friends between users)
+    recommendations.sort(key=lambda x: (-x[1], x[0]))
+
+    # Truncate to 10 elements and map to result lines
+    recommendations = ','.join(list(map(lambda x: str(x[0]), recommendations[:10])))
+    return str(user) + '\t' + recommendations
 
 
 conf = SparkConf()
@@ -70,7 +74,7 @@ mutual_friend_counts = friend_edges.groupByKey() \
 
 recommendations = mutual_friend_counts.flatMap(mutual_friend_count_to_recommendation) \
     .groupByKey() \
-    .map(lambda m: (m[0], recommendation_to_sorted_truncated(list(m[1]))))
+    .map(recommendation_to_sorted_truncated)
 
-recommendations.saveAsTextFile('./result')
+recommendations.repartition(1).saveAsTextFile('result')
 sc.stop()

@@ -1,5 +1,5 @@
 venv/
 result/*.crc
-result/_SUCESS
+result/_SUCCESS
 .idea/
 
