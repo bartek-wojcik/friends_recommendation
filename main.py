@@ -17,6 +17,9 @@ def friend_list_to_connection(friend_list):
 
     connections = []
 
+    if not friends:
+        return [((user_id, user_id), -1)]
+
     for friend_id in friends:
         key = (user_id, friend_id)
         if user_id > friend_id:
@@ -57,10 +60,20 @@ def recommendation_to_sorted_truncated(recommendation):
     # Sort first by mutual friend count, then by user_id (for equal number of mutual friends between users)
     recommendations.sort(key=lambda x: (-x[1], x[0]))
 
-    # Truncate to 10 elements and map to result lines
-    recommendations = ','.join(list(map(lambda x: str(x[0]), recommendations[:10])))
-    return str(user) + '\t' + recommendations
+    if recommendations[-1][0] == user:
+        return user, []
 
+    # Truncate to 10 elements and map to result lines
+    return user, recommendations[:10]
+
+
+def recommendation_to_string(recom):
+    user, recommendations = recom
+
+    if not recommendations:
+        return str(user)
+
+    return str(user) + '\t' + ','.join(list(map(lambda x: str(x[0]), recommendations)))
 
 conf = SparkConf()
 sc = SparkContext(conf=conf)
@@ -74,7 +87,9 @@ mutual_friend_counts = friend_edges.groupByKey() \
 
 recommendations = mutual_friend_counts.flatMap(mutual_friend_count_to_recommendation) \
     .groupByKey() \
-    .map(recommendation_to_sorted_truncated)
+    .map(recommendation_to_sorted_truncated) \
+    .sortBy(lambda x: x[0]) \
+    .map(recommendation_to_string)
 
 recommendations.repartition(1).saveAsTextFile('result')
 sc.stop()
