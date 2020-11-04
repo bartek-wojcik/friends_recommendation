@@ -55,13 +55,14 @@ def mutual_friend_count_to_recommendation(mutuals):
 
 def recommendation_to_sorted_truncated(recommendation):
     user = recommendation[0]
+    # print(list(recommendation[1]))
     # recommendations = list(recommendation[1])
-    recommendations = [r for r in recommendation[1] if r]
+    recommendations = list(filter(lambda x: x[1] > 0, recommendation[1]))
 
     # Sort first by mutual friend count, then by user_id (for equal number of mutual friends between users)
     recommendations.sort(key=lambda x: (-x[1], x[0]))
 
-    if recommendations[-1][0] == user:
+    if not recommendations:
         return user, []
 
     # Truncate to 10 elements and map to result lines
