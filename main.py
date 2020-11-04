@@ -18,7 +18,7 @@ def friend_list_to_connection(friend_list):
     connections = []
 
     if not friends:
-        return [((user_id, user_id), -1)]
+        return [((user_id, user_id), 0)]
 
     for friend_id in friends:
         key = (user_id, friend_id)
@@ -55,8 +55,6 @@ def mutual_friend_count_to_recommendation(mutuals):
 
 def recommendation_to_sorted_truncated(recommendation):
     user = recommendation[0]
-    # print(list(recommendation[1]))
-    # recommendations = list(recommendation[1])
     recommendations = list(filter(lambda x: x[1] > 0, recommendation[1]))
 
     # Sort first by mutual friend count, then by user_id (for equal number of mutual friends between users)
@@ -84,7 +82,7 @@ friend_ownership = lines.map(line_to_friend_list)
 friend_edges = friend_ownership.flatMap(friend_list_to_connection)
 
 mutual_friend_counts = friend_edges.groupByKey() \
-    .map(lambda edge: (edge[0], sum(edge[1])))
+    .map(lambda edge: (edge[0], 0) if 0 in edge[1] else (edge[0], sum(edge[1])))
 
 recommendations = mutual_friend_counts.flatMap(mutual_friend_count_to_recommendation) \
     .groupByKey() \
